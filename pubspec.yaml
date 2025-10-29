@@ -1,0 +1,34 @@
+name: proyecto_av
+description: "A new Flutter project."
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.4.1 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  cupertino_icons: ^1.0.8
+  sqflite: ^2.3.3
+  quickalert: ^1.1.0
+  image_picker: ^1.0.7
+  path_provider: ^2.1.2
+  path: ^1.8.3
+  geolocator: ^11.0.0
+  url_launcher: ^6.2.5
+  intl: ^0.19.0
+
+  # AÑADIDO: Para las notificaciones locales
+  flutter_local_notifications: ^17.1.2
+  rxdart: ^0.28.0 # Dependencia requerida por flutter_local_notifications
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+  flutter_lints: ^4.0.0
+
+flutter:
+  uses-material-design: true
