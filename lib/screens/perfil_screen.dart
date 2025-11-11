@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:proyecto_av/utils/session_manager.dart';
 import 'package:proyecto_av/domain/repositories/usuario_repository.dart';
 import 'package:proyecto_av/data/models/usuario_model.dart';
-import 'package:proyecto_av/screens/login_screen.dart'; // Para el logout forzado
+import 'package:proyecto_av/screens/login_screen.dart'; // Para l logout forzado
 
 class PerfilScreen extends StatefulWidget {
   const PerfilScreen({Key? key}) : super(key: key);
