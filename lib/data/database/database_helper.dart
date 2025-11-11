@@ -6,7 +6,8 @@ import 'package:path_provider/path_provider.dart';
 // --- IMPORTAMOS NUESTROS MODELOS ---
 import '../models/paquete_model.dart';
 import '../models/usuario_model.dart';
-// TODO: Importar los otros modelos (cliente, cita, venta) cuando los usemos
+import '../models/cliente_model.dart';
+import '../models/cita_model.dart';
 
 class DatabaseHelper {
   static final _databaseName = "CorteYPaga.db";
@@ -35,13 +36,15 @@ class DatabaseHelper {
   // --- COLUMNAS TABLA PAQUETES ---
   static final columnDescripcion = 'descripcion';
   static final columnPrecio = 'precio';
-  static final columnImagePath = 'imagePath'; // <-- ¡NUEVO!
+  static final columnImagePath = 'imagePath';
 
   // --- COLUMNAS TABLA CITAS ---
   static final columnIdCliente = 'idCliente';
-  static final columnIdPaquete = 'idPaquete';
+  static final columnIdPaquete = 'idPaquete';     // Ahora será nullable
   static final columnFechaHora = 'fechaHora';
   static final columnEstado = 'estado';
+  static final columnCustomDescripcion = 'customDescripcion'; // <-- ¡NUEVO!
+  static final columnCustomPrecio = 'customPrecio';         // <-- ¡NUEVO!
 
   // --- COLUMNAS TABLA VENTAS ---
   static final columnIdCita = 'idCita';
@@ -61,7 +64,6 @@ class DatabaseHelper {
   }
   // --- FIN DEL PATRÓN SINGLETON ---
 
-  // Método privado para inicializar la base de datos
   _initDatabase() async {
     Directory documentsDirectory = await getApplicationDocumentsDirectory();
     String path = join(documentsDirectory.path, _databaseName);
@@ -74,7 +76,7 @@ class DatabaseHelper {
 
   // SQL para crear las tablas
   Future _onCreate(Database db, int version) async {
-    // Tabla Usuarios (Barberos)
+    // ... (Tablas Usuarios, Clientes, Paquetes - sin cambios) ...
     await db.execute('''
       CREATE TABLE $tableUsuarios (
         $columnId INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -84,8 +86,6 @@ class DatabaseHelper {
         $columnRole TEXT DEFAULT 'barbero'
       )
     ''');
-
-    // Tabla Clientes
     await db.execute('''
       CREATE TABLE $tableClientes (
         $columnId INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -94,8 +94,6 @@ class DatabaseHelper {
         $columnPreferencias TEXT
       )
     ''');
-
-    // Tabla Paquetes (Servicios)
     await db.execute('''
       CREATE TABLE $tablePaquetes (
         $columnId INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -104,22 +102,24 @@ class DatabaseHelper {
         $columnPrecio REAL NOT NULL,
         $columnImagePath TEXT 
       )
-    '''); // <-- ¡SE ACTUALIZÓ ESTA TABLA!
+    ''');
 
-    // Tabla Citas
+    // --- ¡TABLA CITAS ACTUALIZADA! ---
     await db.execute('''
       CREATE TABLE $tableCitas (
         $columnId INTEGER PRIMARY KEY AUTOINCREMENT,
         $columnIdCliente INTEGER NOT NULL,
-        $columnIdPaquete INTEGER NOT NULL,
+        $columnIdPaquete INTEGER, 
         $columnFechaHora TEXT NOT NULL,
         $columnEstado TEXT NOT NULL DEFAULT 'programada',
+        $columnCustomDescripcion TEXT,
+        $columnCustomPrecio REAL,
         FOREIGN KEY ($columnIdCliente) REFERENCES $tableClientes ($columnId),
         FOREIGN KEY ($columnIdPaquete) REFERENCES $tablePaquetes ($columnId)
       )
     ''');
 
-    // Tabla Ventas
+    // ... (Tabla Ventas - sin cambios) ...
     await db.execute('''
       CREATE TABLE $tableVentas (
         $columnId INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -134,15 +134,11 @@ class DatabaseHelper {
 
   // --- INICIO MÉTODOS CRUD ---
 
-  // --- Métodos CRUD para Usuarios ---
-
-  // Insertar un usuario (Registro)
+  // ... (Usuarios, Paquetes, Clientes - sin cambios) ...
   Future<int> insertUsuario(Usuario usuario) async {
     Database db = await instance.database;
     return await db.insert(tableUsuarios, usuario.toMap());
   }
-
-  // Obtener un usuario (Login)
   Future<Usuario?> getUsuario(String email, String password) async {
     Database db = await instance.database;
     List<Map<String, dynamic>> results = await db.query(
@@ -150,32 +146,22 @@ class DatabaseHelper {
       where: '$columnEmail = ? AND $columnPassword = ?',
       whereArgs: [email, password],
     );
-
     if (results.isNotEmpty) {
       return Usuario.fromMap(results.first);
     }
     return null;
   }
-
-  // --- Métodos CRUD para Paquetes (Servicios) ---
-
-  // Insertar un paquete
   Future<int> insertPaquete(Paquete paquete) async {
     Database db = await instance.database;
     return await db.insert(tablePaquetes, paquete.toMap());
   }
-
-  // Obtener todos los paquetes
   Future<List<Paquete>> getAllPaquetes() async {
     Database db = await instance.database;
     final List<Map<String, dynamic>> maps = await db.query(tablePaquetes);
-
     return List.generate(maps.length, (i) {
       return Paquete.fromMap(maps[i]);
     });
   }
-
-  // Actualizar un paquete
   Future<int> updatePaquete(Paquete paquete) async {
     Database db = await instance.database;
     return await db.update(
@@ -185,8 +171,6 @@ class DatabaseHelper {
       whereArgs: [paquete.id],
     );
   }
-
-  // Eliminar un paquete
   Future<int> deletePaquete(int id) async {
     Database db = await instance.database;
     return await db.delete(
@@ -195,6 +179,76 @@ class DatabaseHelper {
       whereArgs: [id],
     );
   }
+  Future<int> insertCliente(Cliente cliente) async {
+    Database db = await instance.database;
+    return await db.insert(tableClientes, cliente.toMap());
+  }
+  Future<List<Cliente>> getAllClientes() async {
+    Database db = await instance.database;
+    final List<Map<String, dynamic>> maps = await db.query(tableClientes);
+    return List.generate(maps.length, (i) {
+      return Cliente.fromMap(maps[i]);
+    });
+  }
+  Future<int> updateCliente(Cliente cliente) async {
+    Database db = await instance.database;
+    return await db.update(
+      tableClientes,
+      cliente.toMap(),
+      where: '$columnId = ?',
+      whereArgs: [cliente.id],
+    );
+  }
+  Future<int> deleteCliente(int id) async {
+    Database db = await instance.database;
+    return await db.delete(
+      tableClientes,
+      where: '$columnId = ?',
+      whereArgs: [id],
+    );
+  }
 
-// TODO: Añadir métodos CRUD para Clientes, Citas y Ventas
+  // --- Métodos CRUD para Citas ---
+  Future<int> insertCita(Cita cita) async {
+    Database db = await instance.database;
+    return await db.insert(tableCitas, cita.toMap());
+  }
+  Future<List<Cita>> getAllCitas() async {
+    Database db = await instance.database;
+    final List<Map<String, dynamic>> maps = await db.query(tableCitas);
+    return List.generate(maps.length, (i) {
+      return Cita.fromMap(maps[i]);
+    });
+  }
+  Future<List<Cita>> getCitasPorDia(DateTime dia) async {
+    Database db = await instance.database;
+    String diaString = dia.toIso8601String().substring(0, 10);
+    final List<Map<String, dynamic>> maps = await db.query(
+      tableCitas,
+      where: '$columnFechaHora LIKE ?',
+      whereArgs: ['$diaString%'],
+      orderBy: '$columnFechaHora ASC', // <-- ¡NUEVO! Ordena las citas por hora
+    );
+    return List.generate(maps.length, (i) {
+      return Cita.fromMap(maps[i]);
+    });
+  }
+  Future<int> updateCita(Cita cita) async {
+    Database db = await instance.database;
+    return await db.update(
+      tableCitas,
+      cita.toMap(),
+      where: '$columnId = ?',
+      whereArgs: [cita.id],
+    );
+  }
+  Future<int> deleteCita(int id) async {
+    Database db = await instance.database;
+    return await db.delete(
+      tableCitas,
+      where: '$columnId = ?',
+      whereArgs: [id],
+    );
+  }
+// TODO: Añadir métodos CRUD para Ventas
 }
