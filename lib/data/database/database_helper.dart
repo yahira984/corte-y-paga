@@ -8,6 +8,7 @@ import '../models/paquete_model.dart';
 import '../models/usuario_model.dart';
 import '../models/cliente_model.dart';
 import '../models/cita_model.dart';
+import 'package:proyecto_av/data/models/venta_model.dart'; // <-- ¡NUEVO IMPORT!
 
 class DatabaseHelper {
   static final _databaseName = "CorteYPaga.db";
@@ -40,17 +41,17 @@ class DatabaseHelper {
 
   // --- COLUMNAS TABLA CITAS ---
   static final columnIdCliente = 'idCliente';
-  static final columnIdPaquete = 'idPaquete';     // Ahora será nullable
+  static final columnIdPaquete = 'idPaquete';
   static final columnFechaHora = 'fechaHora';
   static final columnEstado = 'estado';
-  static final columnCustomDescripcion = 'customDescripcion'; // <-- ¡NUEVO!
-  static final columnCustomPrecio = 'customPrecio';         // <-- ¡NUEVO!
+  static final columnCustomDescripcion = 'customDescripcion';
+  static final columnCustomPrecio = 'customPrecio';
 
   // --- COLUMNAS TABLA VENTAS ---
   static final columnIdCita = 'idCita';
   static final columnMontoTotal = 'montoTotal';
   static final columnFechaVenta = 'fechaVenta';
-  static final columnMetodoPago = 'metodoPago';
+  static final columnMetodoPago = 'metodoPago'; // (Aún no lo usamos, pero está listo)
 
   // --- INICIO DEL PATRÓN SINGLETON ---
   DatabaseHelper._privateConstructor();
@@ -104,7 +105,7 @@ class DatabaseHelper {
       )
     ''');
 
-    // --- ¡TABLA CITAS ACTUALIZADA! ---
+    // --- Tabla Citas ---
     await db.execute('''
       CREATE TABLE $tableCitas (
         $columnId INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -119,7 +120,7 @@ class DatabaseHelper {
       )
     ''');
 
-    // ... (Tabla Ventas - sin cambios) ...
+    // --- Tabla Ventas ---
     await db.execute('''
       CREATE TABLE $tableVentas (
         $columnId INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -134,7 +135,7 @@ class DatabaseHelper {
 
   // --- INICIO MÉTODOS CRUD ---
 
-  // ... (Usuarios, Paquetes, Clientes - sin cambios) ...
+  // ... (Usuarios, Paquetes, Clientes, Citas - sin cambios) ...
   Future<int> insertUsuario(Usuario usuario) async {
     Database db = await instance.database;
     return await db.insert(tableUsuarios, usuario.toMap());
@@ -207,8 +208,6 @@ class DatabaseHelper {
       whereArgs: [id],
     );
   }
-
-  // --- Métodos CRUD para Citas ---
   Future<int> insertCita(Cita cita) async {
     Database db = await instance.database;
     return await db.insert(tableCitas, cita.toMap());
@@ -227,7 +226,7 @@ class DatabaseHelper {
       tableCitas,
       where: '$columnFechaHora LIKE ?',
       whereArgs: ['$diaString%'],
-      orderBy: '$columnFechaHora ASC', // <-- ¡NUEVO! Ordena las citas por hora
+      orderBy: '$columnFechaHora ASC',
     );
     return List.generate(maps.length, (i) {
       return Cita.fromMap(maps[i]);
@@ -250,5 +249,45 @@ class DatabaseHelper {
       whereArgs: [id],
     );
   }
-// TODO: Añadir métodos CRUD para Ventas
+
+  // --- Métodos CRUD para Ventas --- // <-- ¡SECCIÓN NUEVA!
+
+  // Insertar una venta
+  Future<int> insertVenta(Venta venta) async {
+    Database db = await instance.database;
+    return await db.insert(tableVentas, venta.toMap());
+  }
+
+  // Obtener todas las ventas
+  Future<List<Venta>> getAllVentas() async {
+    Database db = await instance.database;
+    final List<Map<String, dynamic>> maps = await db.query(tableVentas);
+
+    return List.generate(maps.length, (i) {
+      return Venta.fromMap(maps[i]);
+    });
+  }
+
+  // Obtener ventas por rango de fechas (¡Para los reportes!)
+  Future<List<Venta>> getVentasPorRango(DateTime inicio, DateTime fin) async {
+    Database db = await instance.database;
+
+    // Aseguramos que la fecha 'fin' cubra todo el día
+    DateTime finDelDia = DateTime(fin.year, fin.month, fin.day, 23, 59, 59);
+
+    final List<Map<String, dynamic>> maps = await db.query(
+      tableVentas,
+      where: '$columnFechaVenta BETWEEN ? AND ?',
+      whereArgs: [inicio.toIso8601String(), finDelDia.toIso8601String()],
+      orderBy: '$columnFechaVenta DESC',
+    );
+
+    return List.generate(maps.length, (i) {
+      return Venta.fromMap(maps[i]);
+    });
+  }
+
+// (No pondremos 'update' o 'delete' para ventas,
+// ya que un registro financiero no debe modificarse ni borrarse,
+// en todo caso se cancela con otro movimiento, pero eso es más avanzado)
 }

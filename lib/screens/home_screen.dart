@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'paquetes_screen.dart';
 import 'clientes_screen.dart';
 import 'package:proyecto_av/screens/citas_screen.dart';
+import 'package:proyecto_av/screens/ventas_screen.dart'; // <-- AÑADE ESTA LÍNEA
 class HomeScreen extends StatelessWidget {
   const HomeScreen({Key? key}) : super(key: key);
 
@@ -79,6 +80,23 @@ class HomeScreen extends StatelessWidget {
                   );
                 },
               ),
+              // --- ¡AÑADE ESTE WIDGET DE AQUÍ ABAJO! ---
+              SizedBox(height: 20), // Un separador
+
+              ElevatedButton.icon(
+                icon: Icon(Icons.bar_chart, color: Colors.green[700]),
+                label: Text('Corte de Caja / Reportes'),
+                style: ElevatedButton.styleFrom(
+                  minimumSize: Size(double.infinity, 50),
+                ),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const VentasScreen()),
+                  );
+                },
+              ),
+// ---------------------------------------------
 
 
 

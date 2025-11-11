@@ -1,22 +1,21 @@
 import '../database/database_helper.dart';
-
 class Cita {
   final int? id;
   final int idCliente;
-  final int? idPaquete; // <-- ¡CAMBIO! Ahora es nullable
+  final int? idPaquete;
   final String fechaHora;
   final String estado;
-  final String? customDescripcion; // <-- ¡NUEVO!
-  final double? customPrecio;       // <-- ¡NUEVO!
+  final String? customDescripcion;
+  final double? customPrecio;
 
   Cita({
     this.id,
     required this.idCliente,
-    this.idPaquete, // <-- ¡CAMBIO!
+    this.idPaquete,
     required this.fechaHora,
     this.estado = 'programada',
-    this.customDescripcion, // <-- ¡NUEVO!
-    this.customPrecio,       // <-- ¡NUEVO!
+    this.customDescripcion,
+    this.customPrecio,
   });
 
   // Convertir un Map (de la BD) a un objeto Cita
@@ -24,11 +23,11 @@ class Cita {
     return Cita(
       id: map[DatabaseHelper.columnId],
       idCliente: map[DatabaseHelper.columnIdCliente],
-      idPaquete: map[DatabaseHelper.columnIdPaquete], // <-- ¡CAMBIO!
+      idPaquete: map[DatabaseHelper.columnIdPaquete],
       fechaHora: map[DatabaseHelper.columnFechaHora],
       estado: map[DatabaseHelper.columnEstado],
-      customDescripcion: map[DatabaseHelper.columnCustomDescripcion], // <-- ¡NUEVO!
-      customPrecio: map[DatabaseHelper.columnCustomPrecio],       // <-- ¡NUEVO!
+      customDescripcion: map[DatabaseHelper.columnCustomDescripcion],
+      customPrecio: map[DatabaseHelper.columnCustomPrecio],
     );
   }
 
@@ -37,11 +36,33 @@ class Cita {
     return {
       DatabaseHelper.columnId: id,
       DatabaseHelper.columnIdCliente: idCliente,
-      DatabaseHelper.columnIdPaquete: idPaquete, // <-- ¡CAMBIO!
+      DatabaseHelper.columnIdPaquete: idPaquete,
       DatabaseHelper.columnFechaHora: fechaHora,
       DatabaseHelper.columnEstado: estado,
-      DatabaseHelper.columnCustomDescripcion: customDescripcion, // <-- ¡NUEVO!
-      DatabaseHelper.columnCustomPrecio: customPrecio,       // <-- ¡NUEVO!
+      DatabaseHelper.columnCustomDescripcion: customDescripcion,
+      DatabaseHelper.columnCustomPrecio: customPrecio,
     };
+  }
+
+  // --- ¡NUEVA FUNCIÓN! ---
+  // Clonar el objeto Cita con valores diferentes
+  Cita copyWith({
+    int? id,
+    int? idCliente,
+    int? idPaquete,
+    String? fechaHora,
+    String? estado,
+    String? customDescripcion,
+    double? customPrecio,
+  }) {
+    return Cita(
+      id: id ?? this.id,
+      idCliente: idCliente ?? this.idCliente,
+      idPaquete: idPaquete ?? this.idPaquete,
+      fechaHora: fechaHora ?? this.fechaHora,
+      estado: estado ?? this.estado,
+      customDescripcion: customDescripcion ?? this.customDescripcion,
+      customPrecio: customPrecio ?? this.customPrecio,
+    );
   }
 }
