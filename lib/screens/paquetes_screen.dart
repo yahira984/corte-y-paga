@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../domain/repositories/paquete_repository.dart';
 import '../../data/models/paquete_model.dart';
 import 'paquete_form_screen.dart';
+
 class PaquetesScreen extends StatefulWidget {
   const PaquetesScreen({Key? key}) : super(key: key);
 
@@ -13,7 +14,7 @@ class PaquetesScreen extends StatefulWidget {
 class _PaquetesScreenState extends State<PaquetesScreen> {
   final _repo = PaqueteRepository();
   List<Paquete> _listaPaquetes = [];
-  bool _isLoading = true; // <-- Añadimos un indicador de carga
+  bool _isLoading = true;
 
   @override
   void initState() {
@@ -23,14 +24,14 @@ class _PaquetesScreenState extends State<PaquetesScreen> {
 
   Future<void> _loadPaquetes() async {
     setState(() {
-      _isLoading = true; // Iniciamos la carga
-      _listaPaquetes = []; // Limpiamos la lista para mostrar el loading
+      _isLoading = true;
+      _listaPaquetes = [];
     });
 
     final paquetes = await _repo.getPaquetes();
     setState(() {
       _listaPaquetes = paquetes;
-      _isLoading = false; // Finalizamos la carga
+      _isLoading = false;
     });
   }
 
@@ -88,23 +89,23 @@ class _PaquetesScreenState extends State<PaquetesScreen> {
         title: Text('Mis Paquetes de Servicios'),
       ),
       body: _isLoading
-          ? Center(child: CircularProgressIndicator()) // Mostramos carga
+          ? Center(child: CircularProgressIndicator())
           : _listaPaquetes.isEmpty
           ? Center(
         child: Text('Aún no tienes paquetes creados.'),
       )
           : ListView.builder(
-        padding: const EdgeInsets.all(16.0), // Padding general para la lista
+        padding: const EdgeInsets.all(16.0),
         itemCount: _listaPaquetes.length,
         itemBuilder: (context, index) {
           final paquete = _listaPaquetes[index];
           return Card(
-            margin: const EdgeInsets.only(bottom: 16.0), // Espacio entre tarjetas
+            margin: const EdgeInsets.only(bottom: 16.0),
             elevation: 4,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(10),
             ),
-            child: InkWell( // Para que toda la tarjeta sea cliqueable para editar
+            child: InkWell(
               onTap: () => _navigateAndRefresh(paquete: paquete),
               borderRadius: BorderRadius.circular(10),
               child: Column(
@@ -112,24 +113,29 @@ class _PaquetesScreenState extends State<PaquetesScreen> {
                 children: [
                   // --- IMAGEN GRANDE ---
                   paquete.imagePath != null
-                      ? ClipRRect(
-                    borderRadius: BorderRadius.vertical(top: Radius.circular(10)),
-                    child: Image.file(
-                      File(paquete.imagePath!),
-                      width: double.infinity, // Ancho completo
-                      height: 180, // Altura más grande
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
-                        // En caso de que la imagen no se encuentre
-                        return Container(
-                          height: 180,
-                          color: Colors.grey[200],
-                          child: Icon(Icons.broken_image, size: 50, color: Colors.grey[600]),
-                        );
-                      },
+                      ? Container( // Contenedor para controlar el tamaño y color de fondo
+                    width: double.infinity,
+                    height: 180, // Mantener altura fija para uniformidad
+                    color: Colors.grey[200], // Color de fondo si la imagen no cubre todo
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.vertical(top: Radius.circular(10)),
+                      child: Image.file(
+                        File(paquete.imagePath!),
+                        width: double.infinity,
+                        // height: 180, // Ya no necesitamos esta altura aquí
+                        fit: BoxFit.contain, // <-- ¡CAMBIO CLAVE!
+                        alignment: Alignment.center, // <-- ¡NUEVO!
+                        errorBuilder: (context, error, stackTrace) {
+                          return Container(
+                            height: 180,
+                            color: Colors.grey[200],
+                            child: Icon(Icons.broken_image, size: 50, color: Colors.grey[600]),
+                          );
+                        },
+                      ),
                     ),
                   )
-                      : Container( // Contenedor por defecto si no hay imagen
+                      : Container(
                     height: 120,
                     width: double.infinity,
                     decoration: BoxDecoration(
@@ -156,7 +162,6 @@ class _PaquetesScreenState extends State<PaquetesScreen> {
                                 ),
                               ),
                             ),
-                            // Botón de Borrar (en la misma línea del título)
                             IconButton(
                               icon: Icon(Icons.delete_outline, color: Colors.red[400]),
                               onPressed: () => _deletePaquete(paquete),
@@ -168,7 +173,7 @@ class _PaquetesScreenState extends State<PaquetesScreen> {
                         Text(
                           paquete.descripcion ?? 'Sin descripción',
                           style: Theme.of(context).textTheme.bodyLarge,
-                          maxLines: 2, // Limita la descripción a 2 líneas
+                          maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                         ),
                         SizedBox(height: 12),
