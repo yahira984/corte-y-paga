@@ -1,65 +1,115 @@
 import 'package:flutter/material.dart';
-import 'package:proyecto_av/screens/%20LocationScreen.dart';
-import 'package:proyecto_av/screens/UserScreen.dart';
-import 'package:proyecto_av/screens/ LocationScreen.dart';
+import 'paquetes_screen.dart';
+import 'clientes_screen.dart';
+import 'package:proyecto_av/screens/citas_screen.dart';
+import 'package:proyecto_av/screens/ventas_screen.dart'; // <-- AÑADE ESTA LÍNEA
+class HomeScreen extends StatelessWidget {
+  const HomeScreen({Key? key}) : super(key: key);
 
-class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
-
-  @override
-  State<HomeScreen> createState() => _HomeScreenState();
-}
-
-class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Home'),
+        title: Text('Mis Citas'),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.logout),
+            onPressed: () {
+              // TODO: Implementar lógica de Logout y navegar al Login
+            },
+          )
+        ],
       ),
-      drawer: Drawer(
-        child: ListView(
-          padding: EdgeInsets.zero,
-          children: [
-            const DrawerHeader(
-              decoration: BoxDecoration(
-                color: Colors.blue,
+      // --- MODIFICA EL BODY ---
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(20.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                '¡Bienvenido, Barbero!',
+                style: Theme.of(context).textTheme.headlineMedium,
+                textAlign: TextAlign.center,
               ),
-              child: Text(
-                'Menu',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 24,
+              SizedBox(height: 40),
+
+
+              ElevatedButton.icon(
+                icon: Icon(Icons.content_cut),
+                label: Text('Administrar mis Paquetes'),
+                style: ElevatedButton.styleFrom(
+                  minimumSize: Size(double.infinity, 50),
                 ),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const PaquetesScreen()),
+                  );
+                },
               ),
-            ),
-            ListTile(
-              leading: Icon(Icons.person),
-              title: Text('Usuarios'),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => Userscreen()),
-                );
-              },
-            ),
-            ListTile(
-              leading: Icon(Icons.location_on), // Ícono para ubicaciones
-              title: Text('Ubicaciones'),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => LocationScreen()),
-                );
-              },
-            ),
-          ],
+              // ------------------------
+              SizedBox(height: 20),
+
+              ElevatedButton.icon(
+                icon: Icon(Icons.people),
+                label: Text('Administrar Clientes'),
+                style: ElevatedButton.styleFrom(
+                  minimumSize: Size(double.infinity, 50),
+                ),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const ClientesScreen()),
+                  );
+                },
+              ),
+              // ------------------------
+              SizedBox(height: 20),
+
+              ElevatedButton.icon(
+                icon: Icon(Icons.calendar_month),
+                label: Text('Agendar Citas'),
+                style: ElevatedButton.styleFrom(
+                  minimumSize: Size(double.infinity, 50),
+                ),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const CitasScreen()),
+                  );
+                },
+              ),
+              // --- ¡AÑADE ESTE WIDGET DE AQUÍ ABAJO! ---
+              SizedBox(height: 20), // Un separador
+
+              ElevatedButton.icon(
+                icon: Icon(Icons.bar_chart, color: Colors.green[700]),
+                label: Text('Corte de Caja / Reportes'),
+                style: ElevatedButton.styleFrom(
+                  minimumSize: Size(double.infinity, 50),
+                ),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const VentasScreen()),
+                  );
+                },
+              ),
+// ---------------------------------------------
+
+
+
+            ],
+          ),
         ),
       ),
-      body: Center(
-        child: Text('Bienvenido a la pantalla principal'),
+
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          // TODO: Navegar a la pantalla de "Crear Cita"
+        },
+        child: Icon(Icons.add),
       ),
     );
   }

@@ -1,95 +1,144 @@
 import 'package:flutter/material.dart';
-import 'package:proyecto_av/screens/home_screen.dart';
-import 'package:proyecto_av/screens/register_screen.dart';
-import 'package:proyecto_av/utils/database.dart';
-import 'package:quickalert/models/quickalert_type.dart';
-import 'package:quickalert/widgets/quickalert_dialog.dart';
+import '../../domain/repositories/usuario_repository.dart';
+import 'home_screen.dart'; // Crearemos esta pantalla en el paso 3
+import 'register_screen.dart';
 
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+  const LoginScreen({Key? key}) : super(key: key);
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  _LoginScreenState createState() => _LoginScreenState();
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  TextEditingController txtUsername = TextEditingController();
-  TextEditingController txtPassword = TextEditingController();
+  // Controladores para el texto
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+
+  // Llave para el Formulario (para validaciones)
+  final _formKey = GlobalKey<FormState>();
+
+  // Instancia de nuestro repositorio
+  final _usuarioRepo = UsuarioRepository();
+
+  // Método para manejar el login
+  Future<void> _doLogin() async {
+    // 1. Validar el formulario
+    if (!_formKey.currentState!.validate()) {
+      return; // Si no es válido, no hace nada
+    }
+
+    // 2. Obtener el texto
+    final email = _emailController.text;
+    final password = _passwordController.text;
+
+    try {
+      // 3. Llamar al repositorio
+      final usuario = await _usuarioRepo.login(email, password);
+
+      // 4. Revisar el resultado
+      if (usuario != null) {
+        // ¡Éxito! Navegar a la pantalla Home
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const HomeScreen()),
+        );
+      } else {
+        // Error: Usuario o contraseña incorrectos
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Email o contraseña incorrectos.')),
+        );
+      }
+    } catch (e) {
+      // Error general
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error al iniciar sesión: $e')),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: AppBar(
-          title: Text('Login'),
-        ),
-        body: SingleChildScrollView(
+      appBar: AppBar(
+        title: Text('Corte & Paga - Login'),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(20.0),
+        child: Form(
+          key: _formKey,
           child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              SizedBox(
-                width: 300,
-                height: 300,
-                child: Image.network(
-                    'https://static.vecteezy.com/system/resources/previews/041/731/156/non_2x/login-icon-vector.jpg',
-                    fit: BoxFit.cover),
+              Text(
+                'Bienvenido',
+                style: Theme.of(context).textTheme.headlineMedium,
               ),
-              Padding(
-                  padding: EdgeInsets.fromLTRB(60, 10, 60, 10),
-                  child: TextFormField(
-                    controller: txtUsername,
-                    decoration: InputDecoration(
-                        prefixIcon: Icon(Icons.person), label: Text('Usuario')),
-                  )),
-              Padding(
-                  padding: EdgeInsets.fromLTRB(60, 10, 60, 10),
-                  child: TextFormField(
-                    controller: txtPassword,
-                    obscureText: true,
-                    decoration: InputDecoration(
-                        prefixIcon: Icon(Icons.lock),
-                        label: Text('Contraseña')),
-                  )),
-              TextButton(
-                  onPressed: () async {
-                    final db = await DatabaseHelper.database;
+              SizedBox(height: 30),
 
-                    final List<Map<String, dynamic>> result = await db.query(
-                        'users',
-                        where: 'user = ? and password = ?',
-                        whereArgs: [txtUsername.text, txtPassword.text]);
-                    if (result.isNotEmpty) {
-                      QuickAlert.show(
-                          context: context,
-                          type: QuickAlertType.success,
-                          title: '¡Bienvenido!',
-                          text: 'Acceso concedido.',
-                          confirmBtnText: 'Entrar',
-                          onConfirmBtnTap: () {
-                            Navigator.of(context).pop();
-                            Navigator.pushReplacement(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (context) => HomeScreen()));
-                          });
-                    } else {
-                      QuickAlert.show(
-                        context: context,
-                        type: QuickAlertType.error,
-                        title: 'Oops...',
-                        text: 'Usuario o contraseña incorrectos.',
-                      );
-                    }
-                  },
-                  child: Text('Accesar')),
-              TextButton(
-                  onPressed: () {
-                    Navigator.push(
+              // --- Campo de Email ---
+              TextFormField(
+                controller: _emailController,
+                decoration: InputDecoration(
+                  labelText: 'Email',
+                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.email),
+                ),
+                keyboardType: TextInputType.emailAddress,
+                validator: (value) {
+                  if (value == null || value.isEmpty || !value.contains('@')) {
+                    return 'Por favor ingresa un email válido';
+                  }
+                  return null;
+                },
+              ),
+              SizedBox(height: 20),
+
+              // --- Campo de Contraseña ---
+              TextFormField(
+                controller: _passwordController,
+                decoration: InputDecoration(
+                  labelText: 'Contraseña',
+                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.lock),
+                ),
+                obscureText: true, // Oculta la contraseña
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Por favor ingresa tu contraseña';
+                  }
+                  return null;
+                },
+              ),
+              SizedBox(height: 30),
+
+              // --- Botón de Login ---
+              ElevatedButton(
+                onPressed: _doLogin,
+                style: ElevatedButton.styleFrom(
+                  minimumSize: Size(double.infinity, 50), // Botón ancho
+                ),
+                child: Text('Ingresar'),
+              ),
+
+              SizedBox(height: 20),
+
+                  // --- Botón de Registro ---
+                  TextButton(
+                    onPressed: () {
+                      // --- MODIFICA AQUÍ ---
+                      Navigator.push(
                         context,
-                        MaterialPageRoute(
-                            builder: (context) => RegistrerScreen()));
-                  },
-                  child: Text('Registrar')),
+                        MaterialPageRoute(builder: (context) => const RegisterScreen()),
+                      );
+                      // ---------------------
+                    },
+                    child: Text('¿No tienes cuenta? Regístrate aquí'),
+                  )
             ],
           ),
-        ));
+        ),
+      ),
+    );
   }
 }
