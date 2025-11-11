@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:proyecto_av/presentation/screens/login/login_screen.dart';
+import 'package:proyecto_av/presentation/screens/registro/registro_screen.dart';
+// 🔹 importa tu pantalla de inicio o splash si ya la tenías
+import 'package:proyecto_av/presentation/screens/splash_screen.dart';
 
 void main() {
   runApp(const CorteYPagaApp());
@@ -11,33 +15,16 @@ class CorteYPagaApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Corte & Paga',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blueGrey),
-        useMaterial3: true,
-      ),
-      home: const SplashScreen(),
       debugShowCheckedModeBanner: false,
-    );
-  }
-}
 
-class SplashScreen extends StatelessWidget {
-  const SplashScreen({super.key});
+      // 👇 si quieres que primero se vea el Splash
+      initialRoute: '/splash',
 
-  @override
-  Widget build(BuildContext context) {
-    return const Scaffold(
-      backgroundColor: Colors.black,
-      body: Center(
-        child: Text(
-          '💈 Corte & Paga 💈',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 28,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ),
+      routes: {
+        '/splash': (context) => const SplashScreen(), // tu pantalla original
+        '/login': (context) => const LoginScreen(),
+        '/registro': (context) => const RegistroScreen(),
+      },
     );
   }
 }
