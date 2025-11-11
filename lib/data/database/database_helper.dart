@@ -9,6 +9,7 @@ import '../models/usuario_model.dart';
 import '../models/cliente_model.dart';
 import '../models/cita_model.dart';
 import 'package:proyecto_av/data/models/venta_model.dart'; // <-- ¡NUEVO IMPORT!
+
 class DatabaseHelper {
   static final _databaseName = "CorteYPaga.db";
   static final _databaseVersion = 1;
@@ -24,25 +25,33 @@ class DatabaseHelper {
   static final columnId = 'id';
   static final columnNombre = 'nombre';
 
-  // ... (Todas las demás columnas sin cambios) ...
+  // --- COLUMNAS TABLA USUARIOS ---
   static final columnEmail = 'email';
   static final columnPassword = 'password';
   static final columnRole = 'role';
+
+  // --- COLUMNAS TABLA CLIENTES ---
   static final columnTelefono = 'telefono';
   static final columnPreferencias = 'preferencias';
+
+  // --- COLUMNAS TABLA PAQUETES ---
   static final columnDescripcion = 'descripcion';
   static final columnPrecio = 'precio';
   static final columnImagePath = 'imagePath';
+
+  // --- COLUMNAS TABLA CITAS ---
   static final columnIdCliente = 'idCliente';
   static final columnIdPaquete = 'idPaquete';
   static final columnFechaHora = 'fechaHora';
   static final columnEstado = 'estado';
   static final columnCustomDescripcion = 'customDescripcion';
   static final columnCustomPrecio = 'customPrecio';
+
+  // --- COLUMNAS TABLA VENTAS ---
   static final columnIdCita = 'idCita';
   static final columnMontoTotal = 'montoTotal';
   static final columnFechaVenta = 'fechaVenta';
-  static final columnMetodoPago = 'metodoPago';
+  static final columnMetodoPago = 'metodoPago'; // (Aún no lo usamos, pero está listo)
 
   // --- INICIO DEL PATRÓN SINGLETON ---
   DatabaseHelper._privateConstructor();
@@ -68,7 +77,7 @@ class DatabaseHelper {
 
   // SQL para crear las tablas
   Future _onCreate(Database db, int version) async {
-    // ... (Creación de todas las tablas - sin cambios) ...
+    // ... (Tablas Usuarios, Clientes, Paquetes - sin cambios) ...
     await db.execute('''
       CREATE TABLE $tableUsuarios (
         $columnId INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -95,6 +104,8 @@ class DatabaseHelper {
         $columnImagePath TEXT 
       )
     ''');
+
+    // --- Tabla Citas ---
     await db.execute('''
       CREATE TABLE $tableCitas (
         $columnId INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -108,6 +119,8 @@ class DatabaseHelper {
         FOREIGN KEY ($columnIdPaquete) REFERENCES $tablePaquetes ($columnId)
       )
     ''');
+
+    // --- Tabla Ventas ---
     await db.execute('''
       CREATE TABLE $tableVentas (
         $columnId INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -122,7 +135,7 @@ class DatabaseHelper {
 
   // --- INICIO MÉTODOS CRUD ---
 
-  // --- Métodos CRUD para Usuarios ---
+  // ... (Usuarios, Paquetes, Clientes, Citas - sin cambios) ...
   Future<int> insertUsuario(Usuario usuario) async {
     Database db = await instance.database;
     return await db.insert(tableUsuarios, usuario.toMap());
@@ -139,25 +152,6 @@ class DatabaseHelper {
     }
     return null;
   }
-
-  // --- ¡NUEVA FUNCIÓN! ---
-  // Actualizar la contraseña de un usuario
-  Future<int> updateUsuarioPassword({
-    required int id,
-    required String oldPassword,
-    required String newPassword,
-  }) async {
-    Database db = await instance.database;
-    // Actualiza solo si el ID Y la contraseña antigua coinciden
-    return await db.update(
-      tableUsuarios,
-      { columnPassword: newPassword },
-      where: '$columnId = ? AND $columnPassword = ?',
-      whereArgs: [id, oldPassword],
-    );
-  }
-
-  // ... (Métodos CRUD de Paquetes, Clientes, Citas, Ventas - sin cambios) ...
   Future<int> insertPaquete(Paquete paquete) async {
     Database db = await instance.database;
     return await db.insert(tablePaquetes, paquete.toMap());
@@ -255,28 +249,45 @@ class DatabaseHelper {
       whereArgs: [id],
     );
   }
+
+  // --- Métodos CRUD para Ventas --- // <-- ¡SECCIÓN NUEVA!
+
+  // Insertar una venta
   Future<int> insertVenta(Venta venta) async {
     Database db = await instance.database;
     return await db.insert(tableVentas, venta.toMap());
   }
+
+  // Obtener todas las ventas
   Future<List<Venta>> getAllVentas() async {
     Database db = await instance.database;
     final List<Map<String, dynamic>> maps = await db.query(tableVentas);
+
     return List.generate(maps.length, (i) {
       return Venta.fromMap(maps[i]);
     });
   }
+
+  // Obtener ventas por rango de fechas (¡Para los reportes!)
   Future<List<Venta>> getVentasPorRango(DateTime inicio, DateTime fin) async {
     Database db = await instance.database;
+
+    // Aseguramos que la fecha 'fin' cubra todo el día
     DateTime finDelDia = DateTime(fin.year, fin.month, fin.day, 23, 59, 59);
+
     final List<Map<String, dynamic>> maps = await db.query(
       tableVentas,
       where: '$columnFechaVenta BETWEEN ? AND ?',
       whereArgs: [inicio.toIso8601String(), finDelDia.toIso8601String()],
       orderBy: '$columnFechaVenta DESC',
     );
+
     return List.generate(maps.length, (i) {
       return Venta.fromMap(maps[i]);
     });
   }
+
+// (No pondremos 'update' o 'delete' para ventas,
+// ya que un registro financiero no debe modificarse ni borrarse,
+// en todo caso se cancela con otro movimiento, pero eso es más avanzado)
 }
