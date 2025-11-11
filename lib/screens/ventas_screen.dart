@@ -33,7 +33,7 @@ class _VentasScreenState extends State<VentasScreen> {
     DateTime now = DateTime.now();
 
     // --- ¡AQUÍ ESTÁ LA CORRECCIÓN! ---
-    // 1. Definimos el inicio exacto de hoy (00:00)
+    // 1. Definimos el inicio exacto de hoy (00:00
     DateTime inicioDeHoy = DateTime(now.year, now.month, now.day);
     // 2. Definimos el fin exacto de hoy (23:59:59)
     DateTime finDeHoy = DateTime(now.year, now.month, now.day, 23, 59, 59);
