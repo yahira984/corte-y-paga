@@ -35,12 +35,13 @@ class DatabaseHelper {
   // --- COLUMNAS TABLA PAQUETES ---
   static final columnDescripcion = 'descripcion';
   static final columnPrecio = 'precio';
+  static final columnImagePath = 'imagePath'; // <-- ¡NUEVO!
 
   // --- COLUMNAS TABLA CITAS ---
   static final columnIdCliente = 'idCliente';
   static final columnIdPaquete = 'idPaquete';
   static final columnFechaHora = 'fechaHora';
-  static final columnEstado = 'estado'; // Ejs: 'programada', 'completada', 'cancelada'
+  static final columnEstado = 'estado';
 
   // --- COLUMNAS TABLA VENTAS ---
   static final columnIdCita = 'idCita';
@@ -100,9 +101,10 @@ class DatabaseHelper {
         $columnId INTEGER PRIMARY KEY AUTOINCREMENT,
         $columnNombre TEXT NOT NULL,
         $columnDescripcion TEXT,
-        $columnPrecio REAL NOT NULL
+        $columnPrecio REAL NOT NULL,
+        $columnImagePath TEXT 
       )
-    ''');
+    '''); // <-- ¡SE ACTUALIZÓ ESTA TABLA!
 
     // Tabla Citas
     await db.execute('''

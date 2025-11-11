@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-
+import 'paquetes_screen.dart';
 class HomeScreen extends StatelessWidget {
   const HomeScreen({Key? key}) : super(key: key);
 
@@ -17,12 +17,41 @@ class HomeScreen extends StatelessWidget {
           )
         ],
       ),
+      // --- MODIFICA EL BODY ---
       body: Center(
-        child: Text(
-          '¡Bienvenido, Barbero!',
-          style: Theme.of(context).textTheme.headlineMedium,
+        child: Padding(
+          padding: const EdgeInsets.all(20.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                '¡Bienvenido, Barbero!',
+                style: Theme.of(context).textTheme.headlineMedium,
+                textAlign: TextAlign.center,
+              ),
+              SizedBox(height: 40),
+
+
+              ElevatedButton.icon(
+                icon: Icon(Icons.content_cut),
+                label: Text('Administrar mis Paquetes'),
+                style: ElevatedButton.styleFrom(
+                  minimumSize: Size(double.infinity, 50),
+                ),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const PaquetesScreen()),
+                  );
+                },
+              ),
+              // ------------------------
+
+            ],
+          ),
         ),
       ),
+
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           // TODO: Navegar a la pantalla de "Crear Cita"

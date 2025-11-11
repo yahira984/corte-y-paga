@@ -5,12 +5,14 @@ class Paquete {
   final String nombre;
   final String? descripcion;
   final double precio;
+  final String? imagePath; // <-- ¡NUEVO!
 
   Paquete({
     this.id,
     required this.nombre,
     this.descripcion,
     required this.precio,
+    this.imagePath, // <-- ¡NUEVO!
   });
 
   // Convertir un Map (de la BD) a un objeto Paquete
@@ -20,6 +22,7 @@ class Paquete {
       nombre: map[DatabaseHelper.columnNombre],
       descripcion: map[DatabaseHelper.columnDescripcion],
       precio: map[DatabaseHelper.columnPrecio],
+      imagePath: map[DatabaseHelper.columnImagePath], // <-- ¡NUEVO!
     );
   }
 
@@ -30,6 +33,7 @@ class Paquete {
       DatabaseHelper.columnNombre: nombre,
       DatabaseHelper.columnDescripcion: descripcion,
       DatabaseHelper.columnPrecio: precio,
+      DatabaseHelper.columnImagePath: imagePath, // <-- ¡NUEVO!
     };
   }
 }
