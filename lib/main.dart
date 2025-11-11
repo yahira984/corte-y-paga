@@ -3,11 +3,19 @@ import 'dart:async'; // <-- 1. Importante para el Timer
 
 // 2. Importamos la pantalla de Login que creaste
 import 'screens/login_screen.dart';
+import 'package:proyecto_av/utils/notification_service.dart';
 
-void main() {
+Future<void> main() async {
+  // --- SE AÑADEN ESTAS LÍNEAS ---
+  // Asegura que Flutter esté inicializado
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Inicializa nuestro servicio de notificaciones
+  await NotificationService.instance.init();
+  // ------------------------------
+
   runApp(const CorteYPagaApp());
 }
-
 class CorteYPagaApp extends StatelessWidget {
   const CorteYPagaApp({super.key});
 

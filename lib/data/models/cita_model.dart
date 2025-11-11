@@ -3,16 +3,20 @@ import '../database/database_helper.dart';
 class Cita {
   final int? id;
   final int idCliente;
-  final int idPaquete;
-  final String fechaHora; // Usaremos String (formato ISO8601) para guardar en SQLite
+  final int? idPaquete; // <-- ¡CAMBIO! Ahora es nullable
+  final String fechaHora;
   final String estado;
+  final String? customDescripcion; // <-- ¡NUEVO!
+  final double? customPrecio;       // <-- ¡NUEVO!
 
   Cita({
     this.id,
     required this.idCliente,
-    required this.idPaquete,
-    required this.fechaHora, // Ej: '2025-11-10T14:30:00'
+    this.idPaquete, // <-- ¡CAMBIO!
+    required this.fechaHora,
     this.estado = 'programada',
+    this.customDescripcion, // <-- ¡NUEVO!
+    this.customPrecio,       // <-- ¡NUEVO!
   });
 
   // Convertir un Map (de la BD) a un objeto Cita
@@ -20,9 +24,11 @@ class Cita {
     return Cita(
       id: map[DatabaseHelper.columnId],
       idCliente: map[DatabaseHelper.columnIdCliente],
-      idPaquete: map[DatabaseHelper.columnIdPaquete],
+      idPaquete: map[DatabaseHelper.columnIdPaquete], // <-- ¡CAMBIO!
       fechaHora: map[DatabaseHelper.columnFechaHora],
       estado: map[DatabaseHelper.columnEstado],
+      customDescripcion: map[DatabaseHelper.columnCustomDescripcion], // <-- ¡NUEVO!
+      customPrecio: map[DatabaseHelper.columnCustomPrecio],       // <-- ¡NUEVO!
     );
   }
 
@@ -31,9 +37,11 @@ class Cita {
     return {
       DatabaseHelper.columnId: id,
       DatabaseHelper.columnIdCliente: idCliente,
-      DatabaseHelper.columnIdPaquete: idPaquete,
+      DatabaseHelper.columnIdPaquete: idPaquete, // <-- ¡CAMBIO!
       DatabaseHelper.columnFechaHora: fechaHora,
       DatabaseHelper.columnEstado: estado,
+      DatabaseHelper.columnCustomDescripcion: customDescripcion, // <-- ¡NUEVO!
+      DatabaseHelper.columnCustomPrecio: customPrecio,       // <-- ¡NUEVO!
     };
   }
 }
