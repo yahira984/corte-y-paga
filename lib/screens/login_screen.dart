@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import '../../domain/repositories/usuario_repository.dart';
 import 'home_screen.dart'; // Crearemos esta pantalla en el paso 3
 import 'register_screen.dart';
-import 'package:proyecto_av/utils/session_manager.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);
@@ -39,10 +38,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
       // 4. Revisar el resultado
       if (usuario != null) {
-        // --- ¡AÑADE ESTA LÍNEA! ---
-        SessionManager.instance.login(usuario);
-        // ----------------------------
-
         // ¡Éxito! Navegar a la pantalla Home
         Navigator.pushReplacement(
           context,
