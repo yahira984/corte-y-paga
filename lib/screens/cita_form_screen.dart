@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+// Imports (ya los tenías bien)
 import 'package:proyecto_av/domain/repositories/cita_repository.dart';
 import 'package:proyecto_av/domain/repositories/cliente_repository.dart';
 import 'package:proyecto_av/domain/repositories/paquete_repository.dart';
@@ -36,7 +37,6 @@ class _CitaFormScreenState extends State<CitaFormScreen> {
   DateTime? _selectedDate;
   TimeOfDay? _selectedTime;
 
-  // --- ¡NUEVO ESTADO! ---
   bool _esServicioPersonalizado = false;
   final _customDescController = TextEditingController();
   final _customPrecioController = TextEditingController();
@@ -61,16 +61,19 @@ class _CitaFormScreenState extends State<CitaFormScreen> {
       _paquetes = paquetes;
 
       if (_isEditing) {
-        // --- LÓGICA DE EDICIÓN ACTUALIZADA ---
         _selectedCliente = clientes.firstWhere((c) => c.id == widget.cita!.idCliente);
         final fechaHora = DateTime.parse(widget.cita!.fechaHora);
         _selectedDate = fechaHora;
         _selectedTime = TimeOfDay.fromDateTime(fechaHora);
 
-        // Revisa si es un paquete o un servicio personalizado
         if (widget.cita!.idPaquete != null) {
           _esServicioPersonalizado = false;
-          _selectedPaquete = paquetes.firstWhere((p) => p.id == widget.cita!.idPaquete);
+          // Usamos 'try-catch' por si el paquete fue borrado
+          try {
+            _selectedPaquete = paquetes.firstWhere((p) => p.id == widget.cita!.idPaquete);
+          } catch (e) {
+            _selectedPaquete = null;
+          }
         } else {
           _esServicioPersonalizado = true;
           _customDescController.text = widget.cita!.customDescripcion ?? '';
@@ -94,18 +97,20 @@ class _CitaFormScreenState extends State<CitaFormScreen> {
     final clientes = await _clienteRepo.getClientes();
     setState(() {
       _clientes = clientes;
-      // Opcional: seleccionar el cliente recién creado
       if (_clientes.isNotEmpty) {
         _selectedCliente = _clientes.last;
       }
     });
   }
 
+  // --- ¡CORRECCIÓN 1: BLOQUEO DE CALENDARIO! ---
   Future<void> _pickDate() async {
+    final now = DateTime.now();
     final pickedDate = await showDatePicker(
       context: context,
-      initialDate: _selectedDate ?? DateTime.now(),
-      firstDate: DateTime(2020),
+      initialDate: _selectedDate ?? now,
+      // No se puede seleccionar un día anterior a hoy
+      firstDate: DateTime(now.year, now.month, now.day),
       lastDate: DateTime(2030),
     );
     if (pickedDate != null) {
@@ -127,14 +132,16 @@ class _CitaFormScreenState extends State<CitaFormScreen> {
     }
   }
 
-  // --- ¡LÓGICA DE GUARDADO ACTUALIZADA! ---
   Future<void> _saveCita() async {
     if (!_formKey.currentState!.validate()) return;
 
     // Validación de campos comunes
     if (_selectedCliente == null || _selectedDate == null || _selectedTime == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Por favor, completa el cliente, fecha y hora.')),
+        SnackBar(
+          content: Text('Por favor, completa el cliente, fecha y hora.'),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
       );
       return;
     }
@@ -145,10 +152,12 @@ class _CitaFormScreenState extends State<CitaFormScreen> {
     double? customPrecio;
 
     if (_esServicioPersonalizado) {
-      // --- Guardar como Servicio Personalizado ---
       if (_customDescController.text.isEmpty || _customPrecioController.text.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Ingresa descripción y precio personalizados.')),
+          SnackBar(
+            content: Text('Ingresa descripción y precio personalizados.'),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
         );
         return;
       }
@@ -156,15 +165,20 @@ class _CitaFormScreenState extends State<CitaFormScreen> {
       customPrecio = double.tryParse(_customPrecioController.text);
       if (customPrecio == null) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Ingresa un precio válido.')),
+          SnackBar(
+            content: Text('Ingresa un precio válido.'),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
         );
         return;
       }
     } else {
-      // --- Guardar como Paquete ---
       if (_selectedPaquete == null) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Por favor, selecciona un paquete.')),
+          SnackBar(
+            content: Text('Por favor, selecciona un paquete.'),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
         );
         return;
       }
@@ -180,12 +194,31 @@ class _CitaFormScreenState extends State<CitaFormScreen> {
       _selectedTime!.minute,
     );
 
+    // --- ¡CORRECCIÓN 2: VALIDACIÓN DE HORA PASADA! ---
+    final now = DateTime.now().subtract(const Duration(minutes: 1)); // Damos 1 min de gracia
+
+    if (fullDateTime.isBefore(now)) {
+      // Si estamos editando Y la fecha no cambió, sí permitimos (ej. solo cambió el precio)
+      if (_isEditing && widget.cita!.fechaHora == fullDateTime.toIso8601String()) {
+        // No hay problema, se está editando otro campo de una cita pasada.
+      } else {
+        // Es una cita nueva en el pasado, O se está moviendo una cita al pasado.
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: No puedes agendar una cita en una fecha u hora que ya pasó.'),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+        return; // Detenemos la ejecución
+      }
+    }
+    // --- FIN DE LA VALIDACIÓN ---
+
     final cita = Cita(
       id: _isEditing ? widget.cita!.id : null,
       idCliente: _selectedCliente!.id!,
       fechaHora: fullDateTime.toIso8601String(),
       estado: _isEditing ? widget.cita!.estado : 'programada',
-      // Campos condicionales
       idPaquete: idPaquete,
       customDescripcion: customDesc,
       customPrecio: customPrecio,
@@ -198,12 +231,18 @@ class _CitaFormScreenState extends State<CitaFormScreen> {
         await _citaRepo.insertCita(cita);
       }
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('¡Cita guardada con éxito!')),
+        SnackBar(
+          content: Text('¡Cita guardada con éxito!'),
+          backgroundColor: Colors.green[700],
+        ),
       );
       Navigator.pop(context);
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error al guardar la cita: $e')),
+        SnackBar(
+          content: Text('Error al guardar la cita: $e'),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
       );
     }
   }
@@ -256,6 +295,7 @@ class _CitaFormScreenState extends State<CitaFormScreen> {
               SwitchListTile(
                 title: Text('Servicio Personalizado'),
                 value: _esServicioPersonalizado,
+                activeColor: Theme.of(context).colorScheme.primary,
                 onChanged: (bool value) {
                   setState(() {
                     _esServicioPersonalizado = value;
@@ -298,7 +338,7 @@ class _CitaFormScreenState extends State<CitaFormScreen> {
                       _selectedPaquete = value;
                     });
                   },
-                  validator: (value) => value == null ? 'Campo requerido' : null,
+                  validator: (value) => !_esServicioPersonalizado && value == null ? 'Campo requerido' : null,
                 ),
 
               SizedBox(height: 30),
@@ -343,9 +383,6 @@ class _CitaFormScreenState extends State<CitaFormScreen> {
               // --- BOTÓN DE GUARDAR ---
               ElevatedButton(
                 onPressed: _saveCita,
-                style: ElevatedButton.styleFrom(
-                  minimumSize: Size(double.infinity, 50),
-                ),
                 child: Text('Guardar Cita'),
               ),
             ],

@@ -72,13 +72,12 @@ class CorteYPagaApp extends StatelessWidget {
         ),
 
         // 4. Estilo de las tarjetas (Cards)
-        // --- ¡AQUÍ ESTÁ LA CORRECCIÓN! ---
         cardTheme: CardThemeData(
           elevation: 2,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(10),
           ),
-        ), // <-- ¡CORREGIDO A "CardThemeData"!
+        ),
 
         // 5. Estilo de los campos de texto
         inputDecorationTheme: InputDecorationTheme(
@@ -137,14 +136,12 @@ class _SplashScreenState extends State<SplashScreen> {
     return Scaffold(
       backgroundColor: Color(0xFF37474F), // Fondo oscuro
       body: Center(
-        child: Text(
-          '💈 Corte & Paga 💈',
-          style: TextStyle(
-            color: Colors.white, // Texto blanco
-            fontSize: 28,
-            fontWeight: FontWeight.bold,
-          ),
+        // --- ¡AQUÍ ESTÁ EL CAMBIO! ---
+        child: Image.asset(
+          'assets/images/logo.png', // La ruta que pusimos en pubspec.yaml
+          width: 250, // Un buen tamaño para el logo en el splash
         ),
+        // -----------------------------
       ),
     );
   }

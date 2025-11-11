@@ -31,6 +31,18 @@ dev_dependencies:
     sdk: flutter
 
   flutter_lints: ^4.0.0
+  flutter_launcher_icons: ^0.13.1
 
 flutter:
   uses-material-design: true
+  assets:
+    - assets/images/logo.png
+    - assets/images/login_bg.png
+    - assets/images/home_bg.png
+
+# --- ¡AÑADE ESTO AL FINAL DE TODO EL ARCHIVO! ---
+flutter_launcher_icons:
+  android: true  # Le decimos que SÍ genere para Android
+  ios: true      # Le decimos que SÍ genere para iOS
+  image_path: "assets/images/logo.png" # ¡LA RUTA EXACTA A TU IMAGEN!
+# ------------------------------------------------
