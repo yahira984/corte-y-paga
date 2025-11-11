@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import '../../domain/repositories/usuario_repository.dart';
-import 'home_screen.dart'; // Crearemos esta pantalla en el paso 3
-import 'register_screen.dart';
+// Importamos todo lo que necesita con rutas absolutas (a prueba de errores)
+import 'package:proyecto_av/domain/repositories/usuario_repository.dart';
+import 'package:proyecto_av/screens/home_screen.dart';
+import 'package:proyecto_av/screens/register_screen.dart';
 import 'package:proyecto_av/utils/session_manager.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -38,26 +39,31 @@ class _LoginScreenState extends State<LoginScreen> {
       final usuario = await _usuarioRepo.login(email, password);
 
       // 4. Revisar el resultado
-      if (usuario != null) {
-        // --- ¡AÑADE ESTA LÍNEA! ---
+      if (usuario != null && context.mounted) {
+        // ¡Éxito! Guardamos en sesión
         SessionManager.instance.login(usuario);
-        // ----------------------------
 
-        // ¡Éxito! Navegar a la pantalla Home
+        // Navegar a la pantalla Home
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => const HomeScreen()),
         );
-      } else {
+      } else if (context.mounted) {
         // Error: Usuario o contraseña incorrectos
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Email o contraseña incorrectos.')),
+          SnackBar(
+            content: Text('Email o contraseña incorrectos.'),
+            backgroundColor: Colors.red[700],
+          ),
         );
       }
     } catch (e) {
       // Error general
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error al iniciar sesión: $e')),
+        SnackBar(
+          content: Text('Error al iniciar sesión: $e'),
+          backgroundColor: Colors.red[700],
+        ),
       );
     }
   }
@@ -65,82 +71,106 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      // Usamos el color de fondo 'roto' de nuestro tema
+      backgroundColor: Theme.of(context).colorScheme.background,
       appBar: AppBar(
         title: Text('Corte & Paga - Login'),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(20.0),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                'Bienvenido',
-                style: Theme.of(context).textTheme.headlineMedium,
-              ),
-              SizedBox(height: 30),
+      // Usamos SingleChildScrollView para evitar overflow con el teclado
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(20.0),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
 
-              // --- Campo de Email ---
-              TextFormField(
-                controller: _emailController,
-                decoration: InputDecoration(
-                  labelText: 'Email',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.email),
-                ),
-                keyboardType: TextInputType.emailAddress,
-                validator: (value) {
-                  if (value == null || value.isEmpty || !value.contains('@')) {
-                    return 'Por favor ingresa un email válido';
-                  }
-                  return null;
-                },
-              ),
-              SizedBox(height: 20),
-
-              // --- Campo de Contraseña ---
-              TextFormField(
-                controller: _passwordController,
-                decoration: InputDecoration(
-                  labelText: 'Contraseña',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.lock),
-                ),
-                obscureText: true, // Oculta la contraseña
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Por favor ingresa tu contraseña';
-                  }
-                  return null;
-                },
-              ),
-              SizedBox(height: 30),
-
-              // --- Botón de Login ---
-              ElevatedButton(
-                onPressed: _doLogin,
-                style: ElevatedButton.styleFrom(
-                  minimumSize: Size(double.infinity, 50), // Botón ancho
-                ),
-                child: Text('Ingresar'),
-              ),
-
-              SizedBox(height: 20),
-
-                  // --- Botón de Registro ---
-                  TextButton(
-                    onPressed: () {
-                      // --- MODIFICA AQUÍ ---
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => const RegisterScreen()),
+                // --- ¡AQUÍ ESTÁ LA IMAGEN! ---
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(15.0),
+                  child: Image.asset(
+                    'assets/images/login_bg.png', // Tu nueva imagen
+                    height: 250, // Un buen tamaño
+                    width: double.infinity,
+                    fit: BoxFit.cover, // Para que llene el espacio
+                    // En caso de que la imagen no cargue
+                    errorBuilder: (context, error, stackTrace) {
+                      return Container(
+                        height: 250,
+                        color: Colors.grey[200],
+                        child: Icon(Icons.broken_image, size: 50, color: Colors.grey[600]),
                       );
-                      // ---------------------
                     },
-                    child: Text('¿No tienes cuenta? Regístrate aquí'),
-                  )
-            ],
+                  ),
+                ),
+                SizedBox(height: 30),
+
+                // -----------------------------
+
+                Text(
+                  'Bienvenido',
+                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                      fontWeight: FontWeight.bold
+                  ),
+                ),
+                SizedBox(height: 30),
+
+                // --- Campo de Email ---
+                TextFormField(
+                  controller: _emailController,
+                  decoration: InputDecoration(
+                    labelText: 'Email',
+                    prefixIcon: Icon(Icons.email),
+                  ),
+                  keyboardType: TextInputType.emailAddress,
+                  validator: (value) {
+                    if (value == null || value.isEmpty || !value.contains('@')) {
+                      return 'Por favor ingresa un email válido';
+                    }
+                    return null;
+                  },
+                ),
+                SizedBox(height: 20),
+
+                // --- Campo de Contraseña ---
+                TextFormField(
+                  controller: _passwordController,
+                  decoration: InputDecoration(
+                    labelText: 'Contraseña',
+                    prefixIcon: Icon(Icons.lock),
+                  ),
+                  obscureText: true, // Oculta la contraseña
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Por favor ingresa tu contraseña';
+                    }
+                    return null;
+                  },
+                ),
+                SizedBox(height: 30),
+
+                // --- Botón de Login ---
+                ElevatedButton(
+                  onPressed: _doLogin,
+                  // El botón ya toma el estilo del ThemeData (azul-gris)
+                  child: Text('Ingresar'),
+                ),
+
+                SizedBox(height: 20),
+
+                // --- Botón de Registro ---
+                TextButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const RegisterScreen()),
+                    );
+                  },
+                  child: Text('¿No tienes cuenta? Regístrate aquí'),
+                )
+              ],
+            ),
           ),
         ),
       ),

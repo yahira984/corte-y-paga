@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-// Corregimos todos los imports a rutas absolutas (la forma más segura)
+// Imports absolutos (la forma más segura)
 import 'package:proyecto_av/screens/paquetes_screen.dart';
 import 'package:proyecto_av/screens/clientes_screen.dart';
 import 'package:proyecto_av/screens/citas_screen.dart';
@@ -7,6 +7,7 @@ import 'package:proyecto_av/screens/ventas_screen.dart';
 import 'package:proyecto_av/screens/login_screen.dart';
 import 'package:proyecto_av/utils/session_manager.dart';
 import 'package:proyecto_av/screens/perfil_screen.dart';
+import 'package:proyecto_av/utils/custom_page_route.dart'; // <-- Import de Animación
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -48,33 +49,33 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      // --- ¡Estilo Login! (Fondo de la app) ---
+      backgroundColor: Theme.of(context).colorScheme.background,
       appBar: AppBar(
-        // --- ¡NUEVO WIDGET DE PERFIL! ---
+        // --- Widget de Perfil (¡CON ANIMACIÓN!) ---
         leading: Padding(
-          padding: const EdgeInsets.all(8.0), // Padding para que no esté pegado
+          padding: const EdgeInsets.all(8.0),
           child: GestureDetector(
             onTap: () {
-              // Navegación a la pantalla de Perfil
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => const PerfilScreen()),
+                FadeInPageRoute(child: const PerfilScreen()),
               );
             },
             child: CircleAvatar(
-              backgroundColor: Colors.grey[300], // Un fondo
+              backgroundColor: Colors.grey[300],
               child: Icon(
                 Icons.person,
-                color: Colors.blueGrey[900], // Color del ícono
+                color: Colors.blueGrey[900],
               ),
             ),
           ),
         ),
-        // ---------------------------------
 
         title: Text('Inicio - Corte & Paga'),
 
         actions: [
-          // --- Botón de Logout (ya lo teníamos) ---
+          // --- Botón de Logout ---
           IconButton(
             icon: Icon(Icons.logout),
             tooltip: 'Cerrar Sesión',
@@ -85,80 +86,101 @@ class HomeScreen extends StatelessWidget {
         ],
       ),
 
-      // --- BODY LIMPIO (SIN EL BOTÓN DE PERFIL) ---
+      // --- ¡Estilo Login! (Sin Stack) ---
       body: Center(
         child: Padding(
           padding: const EdgeInsets.all(20.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                '¡Bienvenido, Barbero!',
-                style: Theme.of(context).textTheme.headlineMedium,
-                textAlign: TextAlign.center,
-              ),
-              SizedBox(height: 40),
-
-              // Botón de Paquetes
-              ElevatedButton.icon(
-                icon: Icon(Icons.content_cut),
-                label: Text('Administrar mis Paquetes'),
-                style: ElevatedButton.styleFrom(
-                  minimumSize: Size(double.infinity, 50),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  '¡Bienvenido, Barbero!',
+                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                  textAlign: TextAlign.center,
                 ),
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => const PaquetesScreen()),
-                  );
-                },
-              ),
-              SizedBox(height: 20),
+                SizedBox(height: 30),
 
-              // Botón de Clientes
-              ElevatedButton.icon(
-                icon: Icon(Icons.people),
-                label: Text('Administrar Clientes'),
-                style: ElevatedButton.styleFrom(
-                  minimumSize: Size(double.infinity, 50),
+                // --- Imagen estilo Login ---
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(15.0),
+                  child: Image.asset(
+                    'assets/images/home_bg.png', // Tu imagen de ambiente
+                    height: 200,
+                    width: double.infinity,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Container(
+                        height: 200,
+                        color: Colors.grey[200],
+                        child: Icon(Icons.broken_image, size: 50, color: Colors.grey[600]),
+                      );
+                    },
+                  ),
                 ),
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => const ClientesScreen()),
-                  );
-                },
-              ),
-              SizedBox(height: 20),
 
-              // Botón de Reportes
-              ElevatedButton.icon(
-                icon: Icon(Icons.bar_chart, color: Colors.green[700]),
-                label: Text('Corte de Caja / Reportes'),
-                style: ElevatedButton.styleFrom(
-                  minimumSize: Size(double.infinity, 50),
+                SizedBox(height: 40),
+
+                // --- Botón de Paquetes (¡CON ANIMACIÓN!) ---
+                ElevatedButton.icon(
+                  icon: Icon(Icons.content_cut),
+                  label: Text('Administrar mis Paquetes'),
+                  style: ElevatedButton.styleFrom(
+                    minimumSize: Size(double.infinity, 50),
+                  ),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      FadeInPageRoute(child: const PaquetesScreen()),
+                    );
+                  },
                 ),
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => const VentasScreen()),
-                  );
-                },
-              ),
+                SizedBox(height: 20),
 
-              // --- ¡BOTÓN DE PERFIL ELIMINADO DE AQUÍ! ---
+                // --- Botón de Clientes (¡CON ANIMACIÓN!) ---
+                ElevatedButton.icon(
+                  icon: Icon(Icons.people),
+                  label: Text('Administrar Clientes'),
+                  style: ElevatedButton.styleFrom(
+                    minimumSize: Size(double.infinity, 50),
+                  ),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      FadeInPageRoute(child: const ClientesScreen()),
+                    );
+                  },
+                ),
+                SizedBox(height: 20),
 
-            ],
+                // --- Botón de Reportes (¡CON ANIMACIÓN!) ---
+                ElevatedButton.icon(
+                  icon: Icon(Icons.bar_chart, color: Colors.green[700]),
+                  label: Text('Corte de Caja / Reportes'),
+                  style: ElevatedButton.styleFrom(
+                    minimumSize: Size(double.infinity, 50),
+                  ),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      FadeInPageRoute(child: const VentasScreen()),
+                    );
+                  },
+                ),
+              ],
+            ),
           ),
         ),
       ),
 
-      // --- FAB CORREGIDO (apunta al Calendario) ---
+      // --- FAB (¡CON ANIMACIÓN!) ---
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => const CitasScreen()),
+            FadeInPageRoute(child: const CitasScreen()),
           );
         },
         child: Icon(Icons.calendar_month),
