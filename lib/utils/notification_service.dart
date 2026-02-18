@@ -3,21 +3,21 @@ import 'package:timezone/data/latest.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 
 class NotificationService {
-  // --- INICIO DEL PATRÓN SINGLETON ---
   NotificationService._privateConstructor();
   static final NotificationService instance = NotificationService._privateConstructor();
-  // --- FIN DEL PATRÓN SINGLETON ---
 
   final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
   FlutterLocalNotificationsPlugin();
 
-  // 1. Método de inicialización
+  // ---------------------------------------------------------------------------
+  // INIT: CONFIGURACIÓN COMPLETA
+  // ---------------------------------------------------------------------------
   Future<void> init() async {
-    // --- Configuración de Android ---
+    // ANDROID
     const AndroidInitializationSettings initializationSettingsAndroid =
-    AndroidInitializationSettings('@mipmap/ic_launcher'); // Usa el ícono de tu app
+    AndroidInitializationSettings('@mipmap/ic_launcher');
 
-    // --- Configuración de iOS (básica) ---
+    // iOS
     const DarwinInitializationSettings initializationSettingsIOS =
     DarwinInitializationSettings(
       requestAlertPermission: true,
@@ -25,30 +25,42 @@ class NotificationService {
       requestSoundPermission: true,
     );
 
-    // --- Inicialización General ---
     const InitializationSettings initializationSettings = InitializationSettings(
       android: initializationSettingsAndroid,
       iOS: initializationSettingsIOS,
     );
 
+    // Inicializar plugin
     await flutterLocalNotificationsPlugin.initialize(initializationSettings);
 
-    // Inicializar la base de datos de zonas horarias
+    // Inicializar zona horaria
     tz.initializeTimeZones();
+
+    // PEDIR PERMISO EN ANDROID 13+
+    final AndroidFlutterLocalNotificationsPlugin? androidPlugin =
+    flutterLocalNotificationsPlugin
+        .resolvePlatformSpecificImplementation<
+        AndroidFlutterLocalNotificationsPlugin>();
+
+    androidPlugin?.requestNotificationsPermission();
   }
 
-  // 2. Detalles del Canal de Notificación (Android)
+  // ---------------------------------------------------------------------------
+  // CANAL DE NOTIFICACIONES — DEBE COINCIDIR CON ANDROIDMANIFEST
+  // ---------------------------------------------------------------------------
   final AndroidNotificationDetails _androidNotificationDetails =
   const AndroidNotificationDetails(
-    'high_importance_channel', // ID del canal (el mismo que en AndroidManifest.xml)
-    'Notificaciones de Citas',
-    channelDescription: 'Canal para recordatorios de citas de Corte & Paga',
+    'citas_channel', // <- ESTE YA COINCIDE
+    'Recordatorios de Citas',
+    channelDescription: 'Canal para notificar citas de Corte & Paga',
     importance: Importance.max,
     priority: Priority.high,
     playSound: true,
   );
 
-  // 3. Método para MOSTRAR una notificación INMEDIATAMENTE
+  // ---------------------------------------------------------------------------
+  // NOTIFICACIÓN INMEDIATA (para pruebas)
+  // ---------------------------------------------------------------------------
   Future<void> showNotification(int id, String title, String body) async {
     await flutterLocalNotificationsPlugin.show(
       id,
@@ -58,15 +70,15 @@ class NotificationService {
     );
   }
 
-  // 4. Método para PROGRAMAR una notificación (¡El que usaremos!)
+  // ---------------------------------------------------------------------------
+  // PROGRAMAR NOTIFICACIÓN A UNA FECHA / HORA EXACTA
+  // ---------------------------------------------------------------------------
   Future<void> scheduleNotification({
     required int id,
     required String title,
     required String body,
     required DateTime scheduledTime,
   }) async {
-
-    // Convertimos la hora del dispositivo a la hora de la zona horaria correcta
     final tz.TZDateTime scheduledTZTime =
     tz.TZDateTime.from(scheduledTime, tz.local);
 
@@ -74,7 +86,7 @@ class NotificationService {
       id,
       title,
       body,
-      scheduledTZTime, // Usamos la hora con zona horaria
+      scheduledTZTime,
       NotificationDetails(android: _androidNotificationDetails),
       androidAllowWhileIdle: true,
       uiLocalNotificationDateInterpretation:
@@ -82,7 +94,29 @@ class NotificationService {
     );
   }
 
-  // 5. Método para CANCELAR una notificación (si se borra la cita)
+  // ---------------------------------------------------------------------------
+  // PROGRAMAR NOTIFICACIÓN 10 MINUTOS ANTES DE UNA CITA
+  // ---------------------------------------------------------------------------
+  Future<void> schedule10MinBefore({
+    required int id,
+    required String cliente,
+    required DateTime fechaCita,
+  }) async {
+    final DateTime notificationTime = fechaCita.subtract(
+      const Duration(minutes: 10),
+    );
+
+    await scheduleNotification(
+      id: id,
+      title: 'Cita próxima',
+      body: 'Tu cliente $cliente llega en 10 minutos.',
+      scheduledTime: notificationTime,
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // CANCELAR (por si borras una cita)
+  // ---------------------------------------------------------------------------
   Future<void> cancelNotification(int id) async {
     await flutterLocalNotificationsPlugin.cancel(id);
   }

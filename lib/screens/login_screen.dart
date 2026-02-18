@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
-// Importamos todo lo que necesita con rutas absolutas (a prueba de errores)
+import 'package:local_auth/local_auth.dart'; // <-- Huella
+import 'package:flutter_secure_storage/flutter_secure_storage.dart'; // <-- Baúl Seguro
 import 'package:proyecto_av/domain/repositories/usuario_repository.dart';
 import 'package:proyecto_av/screens/home_screen.dart';
 import 'package:proyecto_av/screens/register_screen.dart';
 import 'package:proyecto_av/utils/session_manager.dart';
+import 'package:proyecto_av/utils/custom_page_route.dart'; // Animación
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);
@@ -13,57 +15,100 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  // Controladores para el texto
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-
-  // Llave para el Formulario (para validaciones)
   final _formKey = GlobalKey<FormState>();
-
-  // Instancia de nuestro repositorio
   final _usuarioRepo = UsuarioRepository();
 
-  // Método para manejar el login
-  Future<void> _doLogin() async {
-    // 1. Validar el formulario
-    if (!_formKey.currentState!.validate()) {
-      return; // Si no es válido, no hace nada
-    }
+  // Herramientas de biometría y almacenamiento
+  final LocalAuthentication auth = LocalAuthentication();
+  final _storage = const FlutterSecureStorage();
+  bool _canCheckBiometrics = false;
 
-    // 2. Obtener el texto
+  @override
+  void initState() {
+    super.initState();
+    _checkBiometrics(); // Revisar si el cel tiene huella al iniciar
+  }
+
+  Future<void> _checkBiometrics() async {
+    bool canCheckBiometrics;
+    try {
+      canCheckBiometrics = await auth.canCheckBiometrics && await auth.isDeviceSupported();
+    } catch (e) {
+      canCheckBiometrics = false;
+    }
+    if (!mounted) return;
+    setState(() {
+      _canCheckBiometrics = canCheckBiometrics;
+    });
+  }
+
+  // Lógica de Login con Contraseña (Manual)
+  Future<void> _doLogin() async {
+    if (!_formKey.currentState!.validate()) return;
+
     final email = _emailController.text;
     final password = _passwordController.text;
 
     try {
-      // 3. Llamar al repositorio
       final usuario = await _usuarioRepo.login(email, password);
 
-      // 4. Revisar el resultado
-      if (usuario != null && context.mounted) {
-        // ¡Éxito! Guardamos en sesión
-        SessionManager.instance.login(usuario);
+      if (usuario != null && mounted) {
+        // --- ¡MAGIA! GUARDAMOS LAS CREDENCIALES ---
+        await _storage.write(key: 'email', value: email);
+        await _storage.write(key: 'password', value: password);
+        // ------------------------------------------
 
-        // Navegar a la pantalla Home
+        SessionManager.instance.login(usuario);
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => const HomeScreen()),
+          FadeInPageRoute(child: const HomeScreen()),
         );
-      } else if (context.mounted) {
-        // Error: Usuario o contraseña incorrectos
+      } else if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Email o contraseña incorrectos.'),
-            backgroundColor: Colors.red[700],
+            backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
       }
     } catch (e) {
-      // Error general
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error al iniciar sesión: $e'),
-          backgroundColor: Colors.red[700],
-        ),
+        SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+      );
+    }
+  }
+
+  // Lógica de Login con Huella (Automático)
+  Future<void> _authWithBiometrics() async {
+    try {
+      // 1. Pedir Huella
+      final bool didAuthenticate = await auth.authenticate(
+        localizedReason: 'Por favor, escanea tu huella para entrar',
+        options: const AuthenticationOptions(biometricOnly: true),
+      );
+
+      if (didAuthenticate) {
+        // 2. Si pasó, leer credenciales guardadas
+        final String? storedEmail = await _storage.read(key: 'email');
+        final String? storedPass = await _storage.read(key: 'password');
+
+        if (storedEmail != null && storedPass != null) {
+          // 3. Llenar campos y entrar
+          _emailController.text = storedEmail;
+          _passwordController.text = storedPass;
+          _doLogin(); // Reusamos la función de login
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Primero inicia sesión con contraseña una vez para activar la huella.')),
+          );
+        }
+      }
+    } catch (e) {
+      print(e);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error de biometría: $e')),
       );
     }
   }
@@ -71,12 +116,8 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // Usamos el color de fondo 'roto' de nuestro tema
       backgroundColor: Theme.of(context).colorScheme.background,
-      appBar: AppBar(
-        title: Text('Corte & Paga - Login'),
-      ),
-      // Usamos SingleChildScrollView para evitar overflow con el teclado
+      appBar: AppBar(title: Text('Corte & Paga - Login')),
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(20.0),
@@ -85,87 +126,65 @@ class _LoginScreenState extends State<LoginScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-
-                // --- ¡AQUÍ ESTÁ LA IMAGEN! ---
                 ClipRRect(
                   borderRadius: BorderRadius.circular(15.0),
                   child: Image.asset(
-                    'assets/images/login_bg.png', // Tu nueva imagen
-                    height: 250, // Un buen tamaño
+                    'assets/images/login_bg.png',
+                    height: 250,
                     width: double.infinity,
-                    fit: BoxFit.cover, // Para que llene el espacio
-                    // En caso de que la imagen no cargue
-                    errorBuilder: (context, error, stackTrace) {
-                      return Container(
-                        height: 250,
-                        color: Colors.grey[200],
-                        child: Icon(Icons.broken_image, size: 50, color: Colors.grey[600]),
-                      );
-                    },
+                    fit: BoxFit.cover,
+                    errorBuilder: (c, e, s) => Container(height: 250, color: Colors.grey[300], child: Icon(Icons.store, size: 80)),
                   ),
                 ),
                 SizedBox(height: 30),
-
-                // -----------------------------
-
                 Text(
                   'Bienvenido',
-                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.bold
-                  ),
+                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
                 ),
                 SizedBox(height: 30),
-
-                // --- Campo de Email ---
                 TextFormField(
                   controller: _emailController,
-                  decoration: InputDecoration(
-                    labelText: 'Email',
-                    prefixIcon: Icon(Icons.email),
-                  ),
+                  decoration: InputDecoration(labelText: 'Email', prefixIcon: Icon(Icons.email)),
                   keyboardType: TextInputType.emailAddress,
-                  validator: (value) {
-                    if (value == null || value.isEmpty || !value.contains('@')) {
-                      return 'Por favor ingresa un email válido';
-                    }
-                    return null;
-                  },
+                  validator: (v) => !v!.contains('@') ? 'Email inválido' : null,
                 ),
                 SizedBox(height: 20),
-
-                // --- Campo de Contraseña ---
                 TextFormField(
                   controller: _passwordController,
-                  decoration: InputDecoration(
-                    labelText: 'Contraseña',
-                    prefixIcon: Icon(Icons.lock),
-                  ),
-                  obscureText: true, // Oculta la contraseña
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Por favor ingresa tu contraseña';
-                    }
-                    return null;
-                  },
+                  decoration: InputDecoration(labelText: 'Contraseña', prefixIcon: Icon(Icons.lock)),
+                  obscureText: true,
+                  validator: (v) => v!.isEmpty ? 'Requerido' : null,
                 ),
                 SizedBox(height: 30),
 
-                // --- Botón de Login ---
-                ElevatedButton(
-                  onPressed: _doLogin,
-                  // El botón ya toma el estilo del ThemeData (azul-gris)
-                  child: Text('Ingresar'),
+                // Botón Ingresar
+                SizedBox(
+                  width: double.infinity,
+                  height: 50,
+                  child: ElevatedButton(
+                    onPressed: _doLogin,
+                    child: Text('Ingresar', style: TextStyle(fontSize: 18)),
+                  ),
                 ),
 
                 SizedBox(height: 20),
 
-                // --- Botón de Registro ---
+                // --- BOTÓN DE HUELLA ---
+                if (_canCheckBiometrics)
+                  Container(
+                    margin: EdgeInsets.only(bottom: 20),
+                    child: IconButton(
+                      iconSize: 60,
+                      icon: Icon(Icons.fingerprint, color: Theme.of(context).colorScheme.primary),
+                      onPressed: _authWithBiometrics,
+                      tooltip: 'Ingresar con Huella',
+                    ),
+                  ),
+                // -----------------------
+
                 TextButton(
                   onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => const RegisterScreen()),
-                    );
+                    Navigator.push(context, FadeInPageRoute(child: const RegisterScreen()));
                   },
                   child: Text('¿No tienes cuenta? Regístrate aquí'),
                 )

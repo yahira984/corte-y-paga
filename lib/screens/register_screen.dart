@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import '../../domain/repositories/usuario_repository.dart';
-import '../../data/models/usuario_model.dart';
-import 'login_screen.dart';
+import 'package:proyecto_av/domain/repositories/usuario_repository.dart';
+import 'package:proyecto_av/data/models/usuario_model.dart';
+import 'package:proyecto_av/utils/legal_content.dart';
+import 'package:proyecto_av/screens/legal_view_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({Key? key}) : super(key: key);
@@ -17,42 +18,59 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _formKey = GlobalKey<FormState>();
   final _usuarioRepo = UsuarioRepository();
 
+  // --- NUEVA VARIABLE ---
+  bool _terminosAceptados = false;
+
   Future<void> _doRegister() async {
     if (!_formKey.currentState!.validate()) {
       return;
     }
 
-    // 1. Crear el objeto Usuario con los datos
+    // --- NUEVA VALIDACIÓN ---
+    if (!_terminosAceptados) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Debes aceptar los Términos y el Aviso de Privacidad.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
     final nuevoUsuario = Usuario(
       nombre: _nombreController.text,
       email: _emailController.text,
-      password: _passwordController.text, // TODO: En el futuro, esto debe ser un HASH
+      password: _passwordController.text,
     );
 
     try {
-      // 2. Llamar al repositorio para insertar
       final id = await _usuarioRepo.registro(nuevoUsuario);
 
       if (id > 0) {
-        // ¡Éxito!
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('¡Usuario registrado con éxito! Ya puedes iniciar sesión.')),
         );
-
-        // 3. Regresar a la pantalla de Login
         Navigator.pop(context);
-
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error al registrar. ¿El email ya existe?')),
         );
       }
     } catch (e) {
-      // Error de base de datos (probablemente email duplicado)
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error: El email ya está en uso.')),
       );
     }
+  }
+
+  // Función auxiliar para navegar a los documentos
+  void _verDocumento(String titulo, String contenido) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => LegalViewScreen(titulo: titulo, contenido: contenido),
+      ),
+    );
   }
 
   @override
@@ -61,7 +79,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       appBar: AppBar(
         title: Text('Registro de Barbero'),
       ),
-      body: Padding(
+      body: SingleChildScrollView( // Para que no estorbe el teclado
         padding: const EdgeInsets.all(20.0),
         child: Form(
           key: _formKey,
@@ -74,7 +92,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
               ),
               SizedBox(height: 30),
 
-              // --- Campo de Nombre ---
               TextFormField(
                 controller: _nombreController,
                 decoration: InputDecoration(
@@ -82,16 +99,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   border: OutlineInputBorder(),
                   prefixIcon: Icon(Icons.person),
                 ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Por favor ingresa tu nombre';
-                  }
-                  return null;
-                },
+                validator: (value) => value!.isEmpty ? 'Requerido' : null,
               ),
               SizedBox(height: 20),
 
-              // --- Campo de Email ---
               TextFormField(
                 controller: _emailController,
                 decoration: InputDecoration(
@@ -100,16 +111,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   prefixIcon: Icon(Icons.email),
                 ),
                 keyboardType: TextInputType.emailAddress,
-                validator: (value) {
-                  if (value == null || value.isEmpty || !value.contains('@')) {
-                    return 'Por favor ingresa un email válido';
-                  }
-                  return null;
-                },
+                validator: (value) => !value!.contains('@') ? 'Email inválido' : null,
               ),
               SizedBox(height: 20),
 
-              // --- Campo de Contraseña ---
               TextFormField(
                 controller: _passwordController,
                 decoration: InputDecoration(
@@ -118,16 +123,50 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   prefixIcon: Icon(Icons.lock),
                 ),
                 obscureText: true,
-                validator: (value) {
-                  if (value == null || value.isEmpty || value.length < 6) {
-                    return 'La contraseña debe tener al menos 6 caracteres';
-                  }
-                  return null;
-                },
+                validator: (value) => value!.length < 6 ? 'Mínimo 6 caracteres' : null,
+              ),
+
+              SizedBox(height: 20),
+
+              // --- SECCIÓN DE TÉRMINOS Y CONDICIONES ---
+              Row(
+                children: [
+                  Checkbox(
+                    value: _terminosAceptados,
+                    activeColor: Theme.of(context).primaryColor,
+                    onChanged: (bool? value) {
+                      setState(() {
+                        _terminosAceptados = value ?? false;
+                      });
+                    },
+                  ),
+                  Expanded(
+                    child: Wrap(
+                      children: [
+                        Text("He leído y acepto los "),
+                        GestureDetector(
+                          onTap: () => _verDocumento("Términos y Condiciones", LegalContent.terminosYCondiciones),
+                          child: Text(
+                            "Términos y Condiciones",
+                            style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold, decoration: TextDecoration.underline),
+                          ),
+                        ),
+                        Text(" y el "),
+                        GestureDetector(
+                          onTap: () => _verDocumento("Aviso de Privacidad", LegalContent.avisoPrivacidad),
+                          child: Text(
+                            "Aviso de Privacidad",
+                            style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold, decoration: TextDecoration.underline),
+                          ),
+                        ),
+                        Text("."),
+                      ],
+                    ),
+                  ),
+                ],
               ),
               SizedBox(height: 30),
 
-              // --- Botón de Registro ---
               ElevatedButton(
                 onPressed: _doRegister,
                 style: ElevatedButton.styleFrom(
