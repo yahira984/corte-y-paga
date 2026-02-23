@@ -21,6 +21,11 @@ jobs:
       - name: Analyze project
         run: flutter analyze || true
 
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@master
+        env:
+         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
       - name: Run tests
         run: flutter test || true
 
